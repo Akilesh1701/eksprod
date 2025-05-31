@@ -1,0 +1,25 @@
+version: 0.2
+
+env:
+  variables:
+    IMAGE_TAG: "latest"
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com
+  build:
+    commands:
+      - echo Building the Docker image...
+      - docker build -t eks-python-app .
+      - docker tag eks-python-app:latest <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/eks-python-app:latest
+  post_build:
+    commands:
+      - echo Pushing the Docker image...
+      - docker push <ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/eks-python-app:latest
+      - echo Writing image definitions...
+      - printf '[{"name":"python-app","imageUri":"<ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/eks-python-app:latest"}]' > imagedefinitions.json
+
+artifacts:
+  files: imagedefinitions.json
